@@ -1,5 +1,6 @@
 Attribute VB_Name = "Main"
-
+Option Explicit
+Option Compare Text
 
 Public Function Get_Phishing_Emails()
 
@@ -17,47 +18,56 @@ Public Function Get_Phishing_Emails()
     Set OutlookApp = New Outlook.Application
     Set OutlookNamespace = OutlookApp.GetNamespace("MAPI")
     Set Folder = OutlookNamespace.GetDefaultFolder(olFolderInbox)
+    
+    ' From date
+    Dim fromDate As Date: fromDate = Sheet1.Range("eMail_FromDate").Value
+    Sheet1.Range("eMail_FromDate").Value = Now
 
-    'Calculate how much to offset from headers
+    ' Calculate how much to offset from headers
     lastRow = Application.Max(GetLastRow("A", Sheet1), GetLastRow("B", Sheet1), GetLastRow("C", Sheet1))
     rowsAboveHeaders = Sheet1.Range("eMail_Subject").Row - 1
     i = lastRow - rowsAboveHeaders
     
     For Each OutlookMail In Folder.Items
     
-        ' Check Header Data
-        Dim headers As String
-        headers = GetHeaders(OutlookMail)
-        If InStr(headers, "X-PHISH-CRID") > 0 And InStr(headers, "X-KNOWBE4") > 0 Then
-            
-            ' Check that this isn't a "Scam of the Week" email
-            Dim emailSubject As String
-            emailSubject = OutlookMail.Subject
-            If Not (InStr(emailSubject, "Scam of the Week") > 0) Then
-            
-                With Sheet1
-                    
-                    Dim headerLineBreaksRemoved As String
-                    headerLineBreaksRemoved = Replace(headers, vbCrLf, "")
-                    
-                    ' Get Sender Name
-                    Range("eMail_SenderName").Offset(i, 0).Value = OutlookMail.SenderName
-                    
-                    ' Get Email Subject
-                    Range("eMail_Subject").Offset(i, 0).Value = OutlookMail.Subject
-                    
-                    ' Get Received Time
-                    Range("eMail_ReceivedTime").Offset(i, 0).Value = OutlookMail.ReceivedTime
-                    
-                    ' Get Header Phishing ID
-                    Range("eMail_PhishingID").Offset(i, 0).Value = GetMidText(headerLineBreaksRemoved, "X-PHISH-CRID:", "X-KNOWBE4:")
-                    
-                    i = i + 1
-                    
-                End With
+        ' Check if this is a new email
+        If CDate(OutlookMail.ReceivedTime) > fromDate Then
+        
+            ' Check Header Data
+            Dim headers As String
+            headers = GetHeaders(OutlookMail)
+            If InStr(headers, "X-PHISH-CRID") > 0 Then
+                
+                ' Check that this isn't a "Scam of the Week" email
+                Dim emailSubject As String
+                emailSubject = OutlookMail.Subject
+                If Not (InStr(emailSubject, "Scam of the Week") > 0) Then
+                
+                    With Sheet1
+                        
+                        Dim headerLineBreaksRemoved As String
+                        headerLineBreaksRemoved = Replace(headers, vbCrLf, "")
+                        
+                        ' Get Sender Name
+                        Range("eMail_SenderName").Offset(i, 0).Value = OutlookMail.SenderName
+                        
+                        ' Get Email Subject
+                        Range("eMail_Subject").Offset(i, 0).Value = OutlookMail.Subject
+                        
+                        ' Get Received Time
+                        Range("eMail_ReceivedTime").Offset(i, 0).Value = OutlookMail.ReceivedTime
+                        
+                        ' Get Header Phishing ID
+                        Range("eMail_PhishingID").Offset(i, 0).Value = GetMidText(headerLineBreaksRemoved, "X-PHISH-CRID:", "X-KNOWBE4:")
+                        
+                        i = i + 1
+                        
+                    End With
+                
+                End If
             
             End If
-        
+            
         End If
         
     Next OutlookMail
