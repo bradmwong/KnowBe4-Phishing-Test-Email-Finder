@@ -1,4 +1,6 @@
 Attribute VB_Name = "Main"
+' Requirements: Microsoft Outlook 16.0 Object Library
+
 Option Explicit
 Option Compare Text
 
@@ -42,7 +44,7 @@ Public Function Get_Phishing_Emails()
                 Dim emailSubject As String
                 emailSubject = OutlookMail.Subject
                 If Not (InStr(emailSubject, "Scam of the Week") > 0) Then
-                
+                    
                     With Sheet1
                         
                         Dim headerLineBreaksRemoved As String
